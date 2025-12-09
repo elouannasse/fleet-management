@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+
+# Test coverage
+coverage/
+
+# Build
+dist/
+build/
+
+# Uploads/PDFs
+uploads/
+pdfs/
