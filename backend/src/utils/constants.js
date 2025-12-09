@@ -1,18 +1,18 @@
 module.exports = {
-  // Rôles utilisateurs
+ 
   ROLES: {
     ADMIN: 'admin',
     CHAUFFEUR: 'chauffeur'
   },
 
-  // Statuts trajets
+  
   TRAJET_STATUS: {
     A_FAIRE: 'à faire',
     EN_COURS: 'en cours',
     TERMINE: 'terminé'
   },
 
-  // Statuts véhicules
+  
   VEHICULE_STATUS: {
     DISPONIBLE: 'disponible',
     EN_SERVICE: 'en service',
@@ -20,7 +20,7 @@ module.exports = {
     HORS_SERVICE: 'hors service'
   },
 
-  // Types de maintenance
+  
   MAINTENANCE_TYPES: {
     PNEU: 'pneu',
     VIDANGE: 'vidange',
@@ -28,7 +28,7 @@ module.exports = {
     REPARATION: 'reparation'
   },
 
-  // États des pneus
+  
   PNEU_ETAT: {
     NEUF: 'neuf',
     BON: 'bon',

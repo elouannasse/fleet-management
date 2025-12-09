@@ -5,10 +5,7 @@ const { frontendUrl } = require('./config/env');
 const app = express();
 
 
-app.use(cors({
-  origin: frontendUrl,
-  credentials: true
-}));
+app.use(cors({ origin: frontendUrl, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -16,17 +13,21 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: 'API Fleet Management - Backend démarré ✅',
+    message: 'API Fleet Management ',
     version: '1.0.0'
   });
 });
 
-// Routes API (on va les ajouter après)
-// app.use('/api/auth', require('./routes/authRoutes'));
-// app.use('/api/camions', require('./routes/camionRoutes'));
-// etc...
 
-// Middleware de gestion d'erreurs (on va le créer après)
-// app.use(require('./middlewares/errorHandler'));
+app.use('/api/auth', require('./routes/authRoutes'));
+
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.statusCode || 500).json({
+    success: false,
+    message: err.message || 'Erreur serveur'
+  });
+});
 
 module.exports = app;
