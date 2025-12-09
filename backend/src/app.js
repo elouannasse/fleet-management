@@ -1,32 +1,31 @@
-const express = require('express');
-const cors = require('cors');
-const { frontendUrl } = require('./config/env');
+const express = require("express");
+const cors = require("cors");
+const { frontendUrl } = require("./config/env");
 
 const app = express();
-
 
 app.use(cors({ origin: frontendUrl, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: 'API Fleet Management ',
-    version: '1.0.0'
+    message: "API Fleet Management ",
+    version: "1.0.0",
   });
 });
 
-
-app.use('/api/auth', require('./routes/authRoutes'));
-
+// Routes
+app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/camions", require("./routes/camionRoutes"));
+app.use("/api/remorques", require("./routes/remorqueRoutes"));
 
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(err.statusCode || 500).json({
     success: false,
-    message: err.message || 'Erreur serveur'
+    message: err.message || "Erreur serveur",
   });
 });
 
