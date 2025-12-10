@@ -16,10 +16,11 @@ app.get("/", (req, res) => {
   });
 });
 
-// Routes
+
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/camions", require("./routes/camionRoutes"));
 app.use("/api/remorques", require("./routes/remorqueRoutes"));
+app.use("/api/pneus", require("./routes/pneuRoutes"));
 
 app.use((err, req, res, next) => {
   console.error(err);
