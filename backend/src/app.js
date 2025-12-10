@@ -2,6 +2,9 @@ const express = require("express");
 const cors = require("cors");
 const { frontendUrl } = require("./config/env");
 
+// Import all models to ensure they are registered before any controller uses them
+require("./models");
+
 const app = express();
 
 app.use(cors({ origin: frontendUrl, credentials: true }));
@@ -15,7 +18,6 @@ app.get("/", (req, res) => {
     version: "1.0.0",
   });
 });
-
 
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/camions", require("./routes/camionRoutes"));

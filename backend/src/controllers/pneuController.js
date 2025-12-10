@@ -248,7 +248,7 @@ exports.updatePneu = async (req, res) => {
 
     if (vehicule && vehicule !== pneu.vehicule.toString()) {
       const newVehiculeType = vehiculeType || pneu.vehiculeType;
-      const VehicleModel = newVehiculeType === "camion" ? Camion : Remorque;
+      const VehicleModel = newVehiculeType === "Camion" ? Camion : Remorque;
       const vehicleExists = await VehicleModel.findById(vehicule);
 
       if (!vehicleExists) {
@@ -256,7 +256,7 @@ exports.updatePneu = async (req, res) => {
       }
 
       const OldVehicleModel =
-        pneu.vehiculeType === "camion" ? Camion : Remorque;
+        pneu.vehiculeType === "Camion" ? Camion : Remorque;
       await OldVehicleModel.findByIdAndUpdate(pneu.vehicule, {
         $pull: { pneus: pneu._id },
       });
@@ -383,7 +383,7 @@ exports.deletePneu = async (req, res) => {
       return ResponseHandler.notFound(res, "Pneu non trouvé");
     }
 
-    const VehicleModel = pneu.vehiculeType === "camion" ? Camion : Remorque;
+    const VehicleModel = pneu.vehiculeType === "Camion" ? Camion : Remorque;
     await VehicleModel.findByIdAndUpdate(pneu.vehicule, {
       $pull: { pneus: pneu._id },
     });
