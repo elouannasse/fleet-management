@@ -1,0 +1,853 @@
+{
+  "info": {
+    "name": "Fleet Management API - Complete",
+    "description": "Collection complète avec système de maintenance",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.token) {",
+                  "        pm.collectionVariables.set('token', jsonData.data.token);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@fleet.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Register Chauffeur",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Chauffeur\",\n  \"prenom\": \"Test\",\n  \"email\": \"chauffeur@test.com\",\n  \"password\": \"test123\",\n  \"telephone\": \"0612345678\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Camions",
+      "item": [
+        {
+          "name": "Get All Camions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/camions?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "camions"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "statut", "value": "disponible", "disabled": true },
+                { "key": "marque", "value": "Mercedes", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Camion by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/camions/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "camions", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Create Camion",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matricule\": \"ABC-123-99\",\n  \"marque\": \"Mercedes\",\n  \"modele\": \"Actros\",\n  \"annee\": 2023,\n  \"kilometrage\": 50000,\n  \"capaciteCharge\": 25000,\n  \"statut\": \"disponible\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/camions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "camions"]
+            }
+          }
+        },
+        {
+          "name": "Update Camion",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kilometrage\": 55000,\n  \"statut\": \"en service\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/camions/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "camions", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Camion",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/camions/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "camions", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Remorques",
+      "item": [
+        {
+          "name": "Get All Remorques",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/remorques?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "remorques"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Remorque",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matricule\": \"REM-001\",\n  \"type\": \"frigorifique\",\n  \"capacite\": 30000,\n  \"statut\": \"disponible\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/remorques",
+              "host": ["{{base_url}}"],
+              "path": ["api", "remorques"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pneus",
+      "item": [
+        {
+          "name": "Get All Pneus",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/pneus?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "pneus"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "etat", "value": "bon", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Pneu by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/pneus/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "pneus", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Get Pneus by Vehicule",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/pneus/vehicule/:vehiculeType/:vehiculeId",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "pneus",
+                "vehicule",
+                ":vehiculeType",
+                ":vehiculeId"
+              ],
+              "variable": [
+                { "key": "vehiculeType", "value": "Camion" },
+                { "key": "vehiculeId", "value": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Pneu",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference\": \"PNEU-005\",\n  \"marque\": \"Michelin\",\n  \"dimension\": \"315/80R22.5\",\n  \"position\": \"avant-gauche\",\n  \"vehiculeType\": \"Camion\",\n  \"vehicule\": \"CAMION_ID_HERE\",\n  \"kilometrageInstallation\": 50000,\n  \"etat\": \"neuf\",\n  \"pressionRecommandee\": 9.5,\n  \"remarques\": \"Installation neuve\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/pneus",
+              "host": ["{{base_url}}"],
+              "path": ["api", "pneus"]
+            }
+          }
+        },
+        {
+          "name": "Update Pneu",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"etat\": \"bon\",\n  \"remarques\": \"Contrôle effectué\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/pneus/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "pneus", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Update Pneu Etat",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"etat\": \"usé\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/pneus/:id/etat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "pneus", ":id", "etat"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Pneu",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/pneus/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "pneus", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Maintenances",
+      "item": [
+        {
+          "name": "Get All Maintenances",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/maintenances?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenances"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "statut", "value": "planifiée", "disabled": true },
+                { "key": "type", "value": "vidange", "disabled": true },
+                { "key": "priorite", "value": "haute", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Maintenance by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/maintenances/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenances", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Get Maintenances by Vehicule",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/maintenances/vehicule/:vehiculeType/:vehiculeId",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "maintenances",
+                "vehicule",
+                ":vehiculeType",
+                ":vehiculeId"
+              ],
+              "variable": [
+                { "key": "vehiculeType", "value": "Camion" },
+                { "key": "vehiculeId", "value": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Maintenance Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/maintenances/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenances", "stats"],
+              "query": [
+                { "key": "startDate", "value": "2025-01-01", "disabled": true },
+                { "key": "endDate", "value": "2025-12-31", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Maintenance",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehiculeType\": \"Camion\",\n  \"vehicule\": \"CAMION_ID_HERE\",\n  \"type\": \"vidange\",\n  \"description\": \"Vidange complète + changement filtres\",\n  \"priorite\": \"normale\",\n  \"kilometrageActuel\": 45000,\n  \"datePrevue\": \"2025-12-20\",\n  \"pieces\": [\n    {\n      \"nom\": \"Huile moteur 5W30\",\n      \"quantite\": 12,\n      \"prixUnitaire\": 15\n    },\n    {\n      \"nom\": \"Filtre à huile\",\n      \"quantite\": 1,\n      \"prixUnitaire\": 25\n    },\n    {\n      \"nom\": \"Filtre à air\",\n      \"quantite\": 1,\n      \"prixUnitaire\": 35\n    }\n  ],\n  \"mainDoeuvre\": 100,\n  \"technicien\": \"Ahmed Bennani\",\n  \"garage\": \"Garage Mécanique Moderne\",\n  \"remarques\": \"Vérifier aussi les niveaux de liquide de refroidissement\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/maintenances",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenances"]
+            }
+          }
+        },
+        {
+          "name": "Update Maintenance",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"statut\": \"en cours\",\n  \"dateDebut\": \"2025-12-15T08:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/maintenances/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenances", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Complete Maintenance",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"statut\": \"terminée\",\n  \"dateFin\": \"2025-12-15T12:00:00Z\",\n  \"cout\": 350,\n  \"remarques\": \"Maintenance terminée avec succès. Aucun problème détecté.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/maintenances/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenances", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Maintenance",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/maintenances/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenances", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Maintenance Rules",
+      "item": [
+        {
+          "name": "Get All Rules",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/maintenance-rules?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenance-rules"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "type", "value": "vidange", "disabled": true },
+                { "key": "actif", "value": "true", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Rule by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/maintenance-rules/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenance-rules", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Create Rule - Vidange KM",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Vidange tous les 15,000 km\",\n  \"type\": \"vidange\",\n  \"typeAlerte\": \"vidange\",\n  \"description\": \"Vidange d'huile moteur recommandée tous les 15,000 km\",\n  \"intervalleKm\": 15000,\n  \"intervalleJours\": 0,\n  \"seuilAlerteKm\": 1000,\n  \"seuilAlerteJours\": 0,\n  \"vehiculeTypes\": [\"Camion\"],\n  \"actif\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/maintenance-rules",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenance-rules"]
+            }
+          }
+        },
+        {
+          "name": "Create Rule - Vidange Temps",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Vidange tous les 6 mois\",\n  \"type\": \"vidange\",\n  \"typeAlerte\": \"vidange\",\n  \"description\": \"Vidange d'huile moteur recommandée tous les 6 mois\",\n  \"intervalleKm\": 0,\n  \"intervalleJours\": 180,\n  \"seuilAlerteKm\": 0,\n  \"seuilAlerteJours\": 14,\n  \"vehiculeTypes\": [\"Camion\"],\n  \"actif\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/maintenance-rules",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenance-rules"]
+            }
+          }
+        },
+        {
+          "name": "Create Rule - Pneus",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Remplacement des pneus tous les 80,000 km\",\n  \"type\": \"pneu\",\n  \"typeAlerte\": \"remplacement_pneu\",\n  \"description\": \"Les pneus doivent être remplacés tous les 80,000 km pour garantir la sécurité\",\n  \"intervalleKm\": 80000,\n  \"intervalleJours\": 0,\n  \"seuilAlerteKm\": 5000,\n  \"seuilAlerteJours\": 0,\n  \"vehiculeTypes\": [\"Camion\", \"Remorque\"],\n  \"actif\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/maintenance-rules",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenance-rules"]
+            }
+          }
+        },
+        {
+          "name": "Create Rule - Révision",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Révision générale tous les 50,000 km\",\n  \"type\": \"revision\",\n  \"typeAlerte\": \"revision\",\n  \"description\": \"Révision complète du véhicule tous les 50,000 km\",\n  \"intervalleKm\": 50000,\n  \"intervalleJours\": 0,\n  \"seuilAlerteKm\": 3000,\n  \"seuilAlerteJours\": 0,\n  \"vehiculeTypes\": [\"Camion\", \"Remorque\"],\n  \"actif\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/maintenance-rules",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenance-rules"]
+            }
+          }
+        },
+        {
+          "name": "Update Rule",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"intervalleKm\": 20000,\n  \"seuilAlerteKm\": 1500\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/maintenance-rules/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenance-rules", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Toggle Rule Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/maintenance-rules/:id/toggle",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenance-rules", ":id", "toggle"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Rule",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/maintenance-rules/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenance-rules", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Maintenance Alerts",
+      "item": [
+        {
+          "name": "Get All Alerts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/maintenance-alerts?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenance-alerts"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "lue", "value": "false", "disabled": true },
+                { "key": "traitee", "value": "false", "disabled": true },
+                { "key": "urgente", "value": "true", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Alert by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/maintenance-alerts/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenance-alerts", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Check and Generate Alerts",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/maintenance-alerts/check",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenance-alerts", "check"]
+            }
+          }
+        },
+        {
+          "name": "Mark Alert as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/maintenance-alerts/:id/read",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenance-alerts", ":id", "read"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Mark Alert as Treated",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maintenanceId\": \"MAINTENANCE_ID_HERE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/maintenance-alerts/:id/treat",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenance-alerts", ":id", "treat"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Delete Alert",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/maintenance-alerts/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "maintenance-alerts", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports (Admin)",
+      "item": [
+        {
+          "name": "Dashboard Overview",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/reports/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Consumption Report",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/reports/consumption",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "consumption"]
+            }
+          }
+        },
+        {
+          "name": "Consumption Report (with dates)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/reports/consumption?startDate=2024-01-01&endDate=2024-12-31",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "consumption"],
+              "query": [
+                { "key": "startDate", "value": "2024-01-01" },
+                { "key": "endDate", "value": "2024-12-31" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Kilometrage Report",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/reports/kilometrage",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "kilometrage"]
+            }
+          }
+        },
+        {
+          "name": "Maintenance Report",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/reports/maintenance",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "maintenance"]
+            }
+          }
+        },
+        {
+          "name": "Maintenance Report (with dates)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/reports/maintenance?startDate=2024-01-01&endDate=2024-12-31",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "maintenance"],
+              "query": [
+                { "key": "startDate", "value": "2024-01-01" },
+                { "key": "endDate", "value": "2024-12-31" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vehicle Details Report - Camion",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/reports/vehicule/Camion/:vehiculeId",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "vehicule", "Camion", ":vehiculeId"],
+              "variable": [{ "key": "vehiculeId", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Vehicle Details Report - Remorque",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/reports/vehicule/Remorque/:vehiculeId",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "vehicule", "Remorque", ":vehiculeId"],
+              "variable": [{ "key": "vehiculeId", "value": "" }]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const { frontendUrl } = require("./config/env");
 
-// Import all models to ensure they are registered before any controller uses them
 require("./models");
 
 const app = express();
@@ -23,6 +22,10 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/camions", require("./routes/camionRoutes"));
 app.use("/api/remorques", require("./routes/remorqueRoutes"));
 app.use("/api/pneus", require("./routes/pneuRoutes"));
+app.use("/api/maintenances", require("./routes/maintenanceRoutes"));
+app.use("/api/maintenance-rules", require("./routes/maintenanceRuleRoutes"));
+app.use("/api/maintenance-alerts", require("./routes/maintenanceAlertRoutes"));
+app.use("/api/reports", require("./routes/reportRoutes"));
 
 app.use((err, req, res, next) => {
   console.error(err);

@@ -73,7 +73,7 @@ exports.getPneusByVehicule = async (req, res) => {
   try {
     const { vehiculeType, vehiculeId } = req.params;
 
-    // Validate vehiculeType
+   
     if (!["Camion", "Remorque"].includes(vehiculeType)) {
       return ResponseHandler.badRequest(
         res,
@@ -81,7 +81,7 @@ exports.getPneusByVehicule = async (req, res) => {
       );
     }
 
-    // Check if vehicle exists in database
+   
     const VehicleModel = vehiculeType === "Camion" ? Camion : Remorque;
     const vehicleExists = await VehicleModel.findById(vehiculeId);
 
@@ -150,7 +150,6 @@ exports.createPneu = async (req, res) => {
       );
     }
 
-    // Validate vehiculeType
     if (!["Camion", "Remorque"].includes(vehiculeType)) {
       return ResponseHandler.badRequest(
         res,
@@ -158,7 +157,7 @@ exports.createPneu = async (req, res) => {
       );
     }
 
-    // Check if vehicle exists in database
+    
     const VehicleModel = vehiculeType === "Camion" ? Camion : Remorque;
     const vehicleExists = await VehicleModel.findById(vehicule);
 
@@ -167,7 +166,7 @@ exports.createPneu = async (req, res) => {
       return ResponseHandler.notFound(res, `${vehicleName} non trouvé`);
     }
 
-    // Check if position is already occupied on this vehicle
+    
     const existingPneu = await Pneu.findOne({
       vehiculeType,
       vehicule,
