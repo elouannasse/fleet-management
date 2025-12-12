@@ -1,37 +1,35 @@
-const Pneu = require("../models/Pneu");
-const Camion = require("../models/Camion");
-const Remorque = require("../models/Remorque");
 const ResponseHandler = require("../utils/responseHandler");
-const { PNEU_ETAT } = require("../utils/constants");
+const {
+  validateCreatePneu,
+  validateUpdatePneu,
+  validateUpdatePneuEtat,
+} = require("../validators/pneuValidator");
+const {
+  getAllPneus,
+  getPneuById,
+  getPneusByVehicule,
+  createPneu,
+  updatePneu,
+  updatePneuEtat,
+  deletePneu,
+} = require("../services/pneuService");
+const { isValidObjectId } = require("../services/validationService");
+
 
 exports.getAllPneus = async (req, res) => {
   try {
-    const { etat, vehiculeType, vehicule, page = 1, limit = 10 } = req.query;
-
-    const filter = {};
-    if (etat) filter.etat = etat;
-    if (vehiculeType) filter.vehiculeType = vehiculeType;
-    if (vehicule) filter.vehicule = vehicule;
-
-    const skip = (page - 1) * limit;
-
-    const pneus = await Pneu.find(filter)
-      .populate("vehicule", "matricule marque modele")
-      .skip(skip)
-      .limit(parseInt(limit))
-      .sort({ createdAt: -1 });
-
-    const total = await Pneu.countDocuments(filter);
+    const { page = 1, limit = 10 } = req.query;
+    const result = await getAllPneus(req.query, page, limit);
 
     return ResponseHandler.success(
       res,
       {
-        pneus,
+        pneus: result.pneus,
         pagination: {
-          total,
-          page: parseInt(page),
-          pages: Math.ceil(total / limit),
-          limit: parseInt(limit),
+          total: result.total,
+          page: result.page,
+          pages: result.pages,
+          limit: result.limit,
         },
       },
       "Pneus récupérés avec succès"
@@ -45,23 +43,23 @@ exports.getAllPneus = async (req, res) => {
   }
 };
 
+
 exports.getPneuById = async (req, res) => {
   try {
-    const pneu = await Pneu.findById(req.params.id).populate(
-      "vehicule",
-      "matricule marque modele statut"
-    );
-
-    if (!pneu) {
-      return ResponseHandler.notFound(res, "Pneu non trouvé");
+    if (!isValidObjectId(req.params.id)) {
+      return ResponseHandler.badRequest(res, "ID de pneu invalide");
     }
+
+    const pneu = await getPneuById(req.params.id);
 
     return ResponseHandler.success(res, { pneu }, "Pneu récupéré avec succès");
   } catch (error) {
     console.error("Get pneu by ID error:", error);
-    if (error.kind === "ObjectId") {
-      return ResponseHandler.badRequest(res, "ID de pneu invalide");
+
+    if (error.message === "Pneu non trouvé") {
+      return ResponseHandler.notFound(res, error.message);
     }
+
     return ResponseHandler.error(
       res,
       error.message || "Erreur lors de la récupération du pneu"
@@ -69,48 +67,33 @@ exports.getPneuById = async (req, res) => {
   }
 };
 
+
 exports.getPneusByVehicule = async (req, res) => {
   try {
     const { vehiculeType, vehiculeId } = req.params;
 
-   
-    if (!["Camion", "Remorque"].includes(vehiculeType)) {
-      return ResponseHandler.badRequest(
-        res,
-        'Type de véhicule invalide. Utilisez "Camion" ou "Remorque"'
-      );
+    if (!isValidObjectId(vehiculeId)) {
+      return ResponseHandler.badRequest(res, "ID de véhicule invalide");
     }
 
-   
-    const VehicleModel = vehiculeType === "Camion" ? Camion : Remorque;
-    const vehicleExists = await VehicleModel.findById(vehiculeId);
-
-    if (!vehicleExists) {
-      const vehicleName = vehiculeType === "Camion" ? "Camion" : "Remorque";
-      return ResponseHandler.notFound(res, `${vehicleName} non trouvé`);
-    }
-
-    const pneus = await Pneu.find({
-      vehiculeType,
-      vehicule: vehiculeId,
-    })
-      .populate("vehicule", "matricule marque modele")
-      .sort({ position: 1 });
+    const result = await getPneusByVehicule(vehiculeType, vehiculeId);
 
     return ResponseHandler.success(
       res,
-      {
-        pneus,
-        count: pneus.length,
-        vehicule: vehicleExists,
-      },
+      result,
       "Pneus du véhicule récupérés avec succès"
     );
   } catch (error) {
     console.error("Get pneus by vehicle error:", error);
-    if (error.kind === "ObjectId") {
-      return ResponseHandler.badRequest(res, "ID de véhicule invalide");
+
+    if (error.message.includes("invalide")) {
+      return ResponseHandler.badRequest(res, error.message);
     }
+
+    if (error.message.includes("non trouvé")) {
+      return ResponseHandler.notFound(res, error.message);
+    }
+
     return ResponseHandler.error(
       res,
       error.message || "Erreur lors de la récupération des pneus du véhicule"
@@ -118,98 +101,31 @@ exports.getPneusByVehicule = async (req, res) => {
   }
 };
 
+
 exports.createPneu = async (req, res) => {
   try {
-    const {
-      reference,
-      marque,
-      dimension,
-      position,
-      vehiculeType,
-      vehicule,
-      dateInstallation,
-      kilometrageInstallation,
-      etat,
-      pressionRecommandee,
-      remarques,
-    } = req.body;
+ 
+    const { error, value } = validateCreatePneu(req.body);
 
-    if (
-      !reference ||
-      !marque ||
-      !dimension ||
-      !position ||
-      !vehiculeType ||
-      !vehicule ||
-      !kilometrageInstallation ||
-      !pressionRecommandee
-    ) {
-      return ResponseHandler.badRequest(
-        res,
-        "Veuillez fournir tous les champs obligatoires"
-      );
+    if (error) {
+      const errors = error.details.map((detail) => detail.message);
+      return ResponseHandler.badRequest(res, "Erreur de validation", errors);
     }
 
-    if (!["Camion", "Remorque"].includes(vehiculeType)) {
-      return ResponseHandler.badRequest(
-        res,
-        'Type de véhicule invalide. Utilisez "Camion" ou "Remorque"'
-      );
-    }
+  
+    const pneu = await createPneu(value);
 
-    
-    const VehicleModel = vehiculeType === "Camion" ? Camion : Remorque;
-    const vehicleExists = await VehicleModel.findById(vehicule);
-
-    if (!vehicleExists) {
-      const vehicleName = vehiculeType === "Camion" ? "Camion" : "Remorque";
-      return ResponseHandler.notFound(res, `${vehicleName} non trouvé`);
-    }
-
-    
-    const existingPneu = await Pneu.findOne({
-      vehiculeType,
-      vehicule,
-      position,
-    });
-
-    if (existingPneu) {
-      return ResponseHandler.badRequest(
-        res,
-        `Un pneu existe déjà à la position "${position}" sur ce véhicule`
-      );
-    }
-
-    const pneu = await Pneu.create({
-      reference,
-      marque,
-      dimension,
-      position,
-      vehiculeType,
-      vehicule,
-      dateInstallation: dateInstallation || Date.now(),
-      kilometrageInstallation,
-      etat: etat || PNEU_ETAT.NEUF,
-      pressionRecommandee,
-      remarques,
-    });
-
-    await VehicleModel.findByIdAndUpdate(vehicule, {
-      $push: { pneus: pneu._id },
-    });
-
-    const populatedPneu = await Pneu.findById(pneu._id).populate(
-      "vehicule",
-      "matricule marque modele"
-    );
-
-    return ResponseHandler.created(
-      res,
-      { pneu: populatedPneu },
-      "Pneu créé avec succès"
-    );
+    return ResponseHandler.created(res, { pneu }, "Pneu créé avec succès");
   } catch (error) {
     console.error("Create pneu error:", error);
+
+    if (error.message.includes("non trouvé")) {
+      return ResponseHandler.notFound(res, error.message);
+    }
+
+    if (error.message.includes("existe déjà")) {
+      return ResponseHandler.badRequest(res, error.message);
+    }
 
     if (error.name === "ValidationError") {
       const errors = Object.values(error.errors).map((err) => err.message);
@@ -223,92 +139,43 @@ exports.createPneu = async (req, res) => {
   }
 };
 
+// PUT /api/pneus/:id - Modifier un pneu
 exports.updatePneu = async (req, res) => {
   try {
-    const {
-      reference,
-      marque,
-      dimension,
-      position,
-      vehiculeType,
-      vehicule,
-      dateInstallation,
-      kilometrageInstallation,
-      etat,
-      pressionRecommandee,
-      remarques,
-    } = req.body;
-
-    let pneu = await Pneu.findById(req.params.id);
-
-    if (!pneu) {
-      return ResponseHandler.notFound(res, "Pneu non trouvé");
+    if (!isValidObjectId(req.params.id)) {
+      return ResponseHandler.badRequest(res, "ID invalide");
     }
 
-    if (vehicule && vehicule !== pneu.vehicule.toString()) {
-      const newVehiculeType = vehiculeType || pneu.vehiculeType;
-      const VehicleModel = newVehiculeType === "Camion" ? Camion : Remorque;
-      const vehicleExists = await VehicleModel.findById(vehicule);
+   
+    const { error, value } = validateUpdatePneu(req.body);
 
-      if (!vehicleExists) {
-        return ResponseHandler.notFound(res, `${newVehiculeType} non trouvé`);
-      }
-
-      const OldVehicleModel =
-        pneu.vehiculeType === "Camion" ? Camion : Remorque;
-      await OldVehicleModel.findByIdAndUpdate(pneu.vehicule, {
-        $pull: { pneus: pneu._id },
-      });
-
-      await VehicleModel.findByIdAndUpdate(vehicule, {
-        $push: { pneus: pneu._id },
-      });
+    if (error) {
+      const errors = error.details.map((detail) => detail.message);
+      return ResponseHandler.badRequest(res, "Erreur de validation", errors);
     }
 
-    if (position && position !== pneu.position) {
-      const existingPneu = await Pneu.findOne({
-        _id: { $ne: req.params.id },
-        vehiculeType: vehiculeType || pneu.vehiculeType,
-        vehicule: vehicule || pneu.vehicule,
-        position,
-      });
-
-      if (existingPneu) {
-        return ResponseHandler.badRequest(
-          res,
-          `Un pneu existe déjà à la position "${position}" sur ce véhicule`
-        );
-      }
-    }
-
-    if (reference) pneu.reference = reference;
-    if (marque) pneu.marque = marque;
-    if (dimension) pneu.dimension = dimension;
-    if (position) pneu.position = position;
-    if (vehiculeType) pneu.vehiculeType = vehiculeType;
-    if (vehicule) pneu.vehicule = vehicule;
-    if (dateInstallation) pneu.dateInstallation = dateInstallation;
-    if (kilometrageInstallation !== undefined)
-      pneu.kilometrageInstallation = kilometrageInstallation;
-    if (etat) pneu.etat = etat;
-    if (pressionRecommandee !== undefined)
-      pneu.pressionRecommandee = pressionRecommandee;
-    if (remarques !== undefined) pneu.remarques = remarques;
-
-    await pneu.save();
-
-    const updatedPneu = await Pneu.findById(pneu._id).populate(
-      "vehicule",
-      "matricule marque modele"
-    );
+   
+    const pneu = await updatePneu(req.params.id, value);
 
     return ResponseHandler.success(
       res,
-      { pneu: updatedPneu },
+      { pneu },
       "Pneu mis à jour avec succès"
     );
   } catch (error) {
     console.error("Update pneu error:", error);
+
+    if (error.message === "Pneu non trouvé") {
+      return ResponseHandler.notFound(res, error.message);
+    }
+
+    if (error.message.includes("non trouvé")) {
+      return ResponseHandler.notFound(res, error.message);
+    }
+
+    if (error.message.includes("existe déjà")) {
+      return ResponseHandler.badRequest(res, error.message);
+    }
 
     if (error.kind === "ObjectId") {
       return ResponseHandler.badRequest(res, "ID invalide");
@@ -326,42 +193,35 @@ exports.updatePneu = async (req, res) => {
   }
 };
 
+
 exports.updatePneuEtat = async (req, res) => {
   try {
-    const { etat } = req.body;
-
-    if (!etat) {
-      return ResponseHandler.badRequest(res, "L'état du pneu est requis");
+    if (!isValidObjectId(req.params.id)) {
+      return ResponseHandler.badRequest(res, "ID de pneu invalide");
     }
 
-    if (!Object.values(PNEU_ETAT).includes(etat)) {
-      return ResponseHandler.badRequest(
-        res,
-        `État invalide. Utilisez: ${Object.values(PNEU_ETAT).join(", ")}`
-      );
+   
+    const { error, value } = validateUpdatePneuEtat(req.body);
+
+    if (error) {
+      const errors = error.details.map((detail) => detail.message);
+      return ResponseHandler.badRequest(res, "Erreur de validation", errors);
     }
 
-    const pneu = await Pneu.findById(req.params.id);
-
-    if (!pneu) {
-      return ResponseHandler.notFound(res, "Pneu non trouvé");
-    }
-
-    pneu.etat = etat;
-    await pneu.save();
-
-    const updatedPneu = await Pneu.findById(pneu._id).populate(
-      "vehicule",
-      "matricule marque modele"
-    );
+    
+    const pneu = await updatePneuEtat(req.params.id, value.etat);
 
     return ResponseHandler.success(
       res,
-      { pneu: updatedPneu },
+      { pneu },
       "État du pneu mis à jour avec succès"
     );
   } catch (error) {
     console.error("Update pneu etat error:", error);
+
+    if (error.message === "Pneu non trouvé") {
+      return ResponseHandler.notFound(res, error.message);
+    }
 
     if (error.kind === "ObjectId") {
       return ResponseHandler.badRequest(res, "ID de pneu invalide");
@@ -374,24 +234,22 @@ exports.updatePneuEtat = async (req, res) => {
   }
 };
 
+
 exports.deletePneu = async (req, res) => {
   try {
-    const pneu = await Pneu.findById(req.params.id);
-
-    if (!pneu) {
-      return ResponseHandler.notFound(res, "Pneu non trouvé");
+    if (!isValidObjectId(req.params.id)) {
+      return ResponseHandler.badRequest(res, "ID de pneu invalide");
     }
 
-    const VehicleModel = pneu.vehiculeType === "Camion" ? Camion : Remorque;
-    await VehicleModel.findByIdAndUpdate(pneu.vehicule, {
-      $pull: { pneus: pneu._id },
-    });
-
-    await Pneu.findByIdAndDelete(req.params.id);
+    const pneu = await deletePneu(req.params.id);
 
     return ResponseHandler.success(res, { pneu }, "Pneu supprimé avec succès");
   } catch (error) {
     console.error("Delete pneu error:", error);
+
+    if (error.message === "Pneu non trouvé") {
+      return ResponseHandler.notFound(res, error.message);
+    }
 
     if (error.kind === "ObjectId") {
       return ResponseHandler.badRequest(res, "ID de pneu invalide");

@@ -9,3 +9,5 @@ Thumbs.db
 # Docker
 *.tar
 docker-compose.override.yml
+
+node_modules/

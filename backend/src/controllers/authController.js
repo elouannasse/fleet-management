@@ -2,25 +2,22 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { jwtSecret, jwtExpire } = require("../config/env");
 
-
 const generateToken = (id) => {
   return jwt.sign({ id }, jwtSecret, { expiresIn: jwtExpire });
 };
 
-
 exports.registerChauffeur = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, nom, email, password } = req.body;
+    const userName = name || nom;
 
-    
-    if (!name || !email || !password) {
+    if (!userName || !email || !password) {
       return res.status(400).json({
         success: false,
         message: "Veuillez fournir nom, email et mot de passe",
       });
     }
 
-   
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
@@ -29,15 +26,13 @@ exports.registerChauffeur = async (req, res) => {
       });
     }
 
-    
     const user = await User.create({
-      name,
+      name: userName,
       email,
       password,
-      role: "chauffeur", 
+      role: "chauffeur",
     });
 
-    
     const token = generateToken(user._id);
 
     res.status(201).json({
@@ -55,6 +50,24 @@ exports.registerChauffeur = async (req, res) => {
     });
   } catch (error) {
     console.error("Register error:", error);
+
+    // Gérer les erreurs de validation Mongoose
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: "Erreur de validation",
+        errors: Object.values(error.errors).map((e) => e.message),
+      });
+    }
+
+    // Gérer les erreurs de duplication (email déjà existant)
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Cet email est déjà utilisé",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: error.message || "Erreur lors de l'inscription",
@@ -62,12 +75,10 @@ exports.registerChauffeur = async (req, res) => {
   }
 };
 
-
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-   
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -75,7 +86,6 @@ exports.login = async (req, res) => {
       });
     }
 
-   
     const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
@@ -85,7 +95,6 @@ exports.login = async (req, res) => {
       });
     }
 
-    
     const isMatch = await user.comparePassword(password);
 
     if (!isMatch) {
@@ -95,7 +104,6 @@ exports.login = async (req, res) => {
       });
     }
 
-   
     if (!user.isActive) {
       return res.status(403).json({
         success: false,
@@ -103,7 +111,6 @@ exports.login = async (req, res) => {
       });
     }
 
-   
     const token = generateToken(user._id);
 
     res.status(200).json({
@@ -127,7 +134,6 @@ exports.login = async (req, res) => {
     });
   }
 };
-
 
 exports.getMe = async (req, res) => {
   try {

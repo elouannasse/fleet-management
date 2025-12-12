@@ -7,10 +7,12 @@ const {
   updateRule,
   deleteRule,
   toggleRuleStatus,
+  checkAndGenerateAlerts,
 } = require("../controllers/maintenanceRuleController");
 const { protect } = require("../middlewares/authMiddleware");
 const { adminOnly } = require("../middlewares/roleMiddleware");
 
+router.post("/check-alerts", protect, adminOnly, checkAndGenerateAlerts);
 router.get("/", protect, adminOnly, getAllRules);
 router.get("/:id", protect, adminOnly, getRuleById);
 router.post("/", protect, adminOnly, createRule);

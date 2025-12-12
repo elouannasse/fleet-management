@@ -13,9 +13,17 @@ const pneuSchema = new mongoose.Schema(
       required: [true, "La marque est obligatoire"],
       trim: true,
     },
+    modele: {
+      type: String,
+      trim: true,
+    },
     dimension: {
       type: String,
       required: [true, "La dimension est obligatoire"],
+      trim: true,
+    },
+    numeroSerie: {
+      type: String,
       trim: true,
     },
     position: {
@@ -52,6 +60,18 @@ const pneuSchema = new mongoose.Schema(
       type: Number,
       required: [true, "Le kilométrage à l'installation est obligatoire"],
       min: 0,
+    },
+    dateAchat: {
+      type: Date,
+    },
+    prixAchat: {
+      type: Number,
+      min: 0,
+    },
+    statut: {
+      type: String,
+      enum: ["en service", "en stock", "retiré", "recyclé"],
+      default: "en service",
     },
     etat: {
       type: String,

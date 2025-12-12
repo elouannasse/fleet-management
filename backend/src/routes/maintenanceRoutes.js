@@ -12,7 +12,7 @@ const {
 const { protect } = require("../middlewares/authMiddleware");
 const { adminOnly } = require("../middlewares/roleMiddleware");
 
-// Admin only routes
+
 router.get("/", protect, adminOnly, getAllMaintenances);
 router.get("/stats", protect, adminOnly, getMaintenanceStats);
 router.get(

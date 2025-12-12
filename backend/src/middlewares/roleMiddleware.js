@@ -1,7 +1,6 @@
 const { ROLES } = require("../utils/constants");
 const ResponseHandler = require("../utils/responseHandler");
 
-
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -19,6 +18,7 @@ const authorize = (...roles) => {
   };
 };
 
+// adminOnly est directement le middleware retourné par authorize
 const adminOnly = authorize(ROLES.ADMIN);
 
 module.exports = {

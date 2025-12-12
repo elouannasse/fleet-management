@@ -2,12 +2,10 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { jwtSecret } = require("../config/env");
 
-
 exports.protect = async (req, res, next) => {
   try {
     let token;
 
-   
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
@@ -15,7 +13,6 @@ exports.protect = async (req, res, next) => {
       token = req.headers.authorization.split(" ")[1];
     }
 
-    
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -66,7 +63,6 @@ exports.protect = async (req, res, next) => {
   }
 };
 
-
 exports.authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -85,4 +81,23 @@ exports.authorize = (...roles) => {
 
     next();
   };
+};
+
+// Middleware spécifique pour admin uniquement
+exports.adminOnly = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: "Non authentifié",
+    });
+  }
+
+  if (req.user.role !== "admin") {
+    return res.status(403).json({
+      success: false,
+      message: "Accès réservé aux administrateurs",
+    });
+  }
+
+  next();
 };

@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { frontendUrl } = require("./config/env");
+const errorHandler = require("./middlewares/errorHandler");
 
 require("./models");
 
@@ -19,20 +20,16 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/camions", require("./routes/camionRoutes"));
 app.use("/api/remorques", require("./routes/remorqueRoutes"));
 app.use("/api/pneus", require("./routes/pneuRoutes"));
+app.use("/api/trajets", require("./routes/trajetRoutes"));
 app.use("/api/maintenances", require("./routes/maintenanceRoutes"));
 app.use("/api/maintenance-rules", require("./routes/maintenanceRuleRoutes"));
-app.use("/api/maintenance-alerts", require("./routes/maintenanceAlertRoutes"));
 app.use("/api/reports", require("./routes/reportRoutes"));
 
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(err.statusCode || 500).json({
-    success: false,
-    message: err.message || "Erreur serveur",
-  });
-});
+// Error handler middleware (doit être après les routes)
+app.use(errorHandler);
 
 module.exports = app;

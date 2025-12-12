@@ -10,7 +10,7 @@ const {
 const { protect } = require("../middlewares/authMiddleware");
 const { adminOnly } = require("../middlewares/roleMiddleware");
 
-// All routes are admin only
+
 router.get("/consumption", protect, adminOnly, getConsumptionReport);
 router.get("/kilometrage", protect, adminOnly, getKilometrageReport);
 router.get("/maintenance", protect, adminOnly, getMaintenanceReport);

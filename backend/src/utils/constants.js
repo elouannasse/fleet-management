@@ -5,6 +5,7 @@ module.exports = {
   },
 
   TRAJET_STATUS: {
+    PLANIFIE: "planifié",
     A_FAIRE: "à faire",
     EN_COURS: "en cours",
     TERMINE: "terminé",

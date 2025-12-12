@@ -1,38 +1,33 @@
-const Camion = require("../models/Camion");
 const ResponseHandler = require("../utils/responseHandler");
-const { VEHICULE_STATUS } = require("../utils/constants");
+const {
+  validateCreateCamion,
+  validateUpdateCamion,
+} = require("../validators/camionValidator");
+const {
+  getAllCamions,
+  getCamionById,
+  getCamionsDisponibles,
+  createCamion,
+  updateCamion,
+  deleteCamion,
+} = require("../services/camionService");
+const { isValidObjectId } = require("../services/validationService");
 
 
 exports.getAllCamions = async (req, res) => {
   try {
-    const { statut, marque, annee, page = 1, limit = 10 } = req.query;
-
-    
-    const filter = {};
-    if (statut) filter.statut = statut;
-    if (marque) filter.marque = new RegExp(marque, "i");
-    if (annee) filter.annee = parseInt(annee);
-
-    // Pagination
-    const skip = (page - 1) * limit;
-
-    const camions = await Camion.find(filter)
-      .populate("pneus", "reference marque position usure")
-      .skip(skip)
-      .limit(parseInt(limit))
-      .sort({ createdAt: -1 });
-
-    const total = await Camion.countDocuments(filter);
+    const { page = 1, limit = 10 } = req.query;
+    const result = await getAllCamions(req.query, page, limit);
 
     return ResponseHandler.success(
       res,
       {
-        camions,
+        camions: result.camions,
         pagination: {
-          total,
-          page: parseInt(page),
-          pages: Math.ceil(total / limit),
-          limit: parseInt(limit),
+          total: result.total,
+          page: result.page,
+          pages: result.pages,
+          limit: result.limit,
         },
       },
       "Camions récupérés avec succès"
@@ -49,14 +44,11 @@ exports.getAllCamions = async (req, res) => {
 
 exports.getCamionById = async (req, res) => {
   try {
-    const camion = await Camion.findById(req.params.id).populate(
-      "pneus",
-      "reference marque position usure statut"
-    );
-
-    if (!camion) {
-      return ResponseHandler.notFound(res, "Camion non trouvé");
+    if (!isValidObjectId(req.params.id)) {
+      return ResponseHandler.badRequest(res, "ID de camion invalide");
     }
+
+    const camion = await getCamionById(req.params.id);
 
     return ResponseHandler.success(
       res,
@@ -65,9 +57,15 @@ exports.getCamionById = async (req, res) => {
     );
   } catch (error) {
     console.error("Get camion by ID error:", error);
+
+    if (error.message === "Camion non trouvé") {
+      return ResponseHandler.notFound(res, error.message);
+    }
+
     if (error.kind === "ObjectId") {
       return ResponseHandler.badRequest(res, "ID de camion invalide");
     }
+
     return ResponseHandler.error(
       res,
       error.message || "Erreur lors de la récupération du camion"
@@ -78,16 +76,11 @@ exports.getCamionById = async (req, res) => {
 
 exports.getCamionsDisponibles = async (req, res) => {
   try {
-    const camions = await Camion.find({ statut: VEHICULE_STATUS.DISPONIBLE })
-      .populate("pneus", "reference marque position usure")
-      .sort({ matricule: 1 });
+    const result = await getCamionsDisponibles();
 
     return ResponseHandler.success(
       res,
-      {
-        camions,
-        count: camions.length,
-      },
+      result,
       "Camions disponibles récupérés avec succès"
     );
   } catch (error) {
@@ -102,66 +95,24 @@ exports.getCamionsDisponibles = async (req, res) => {
 
 exports.createCamion = async (req, res) => {
   try {
-    const {
-      matricule,
-      marque,
-      modele,
-      annee,
-      kilometrage,
-      capaciteCharge,
-      statut,
-      pneus,
-      derniereMaintenance,
-      prochaineMaintenance,
-      remarques,
-    } = req.body;
+    
+    const { error, value } = validateCreateCamion(req.body);
 
-  
-    if (!matricule || !marque || !modele || !capaciteCharge) {
-      return ResponseHandler.badRequest(
-        res,
-        "Veuillez fournir tous les champs obligatoires"
-      );
+    if (error) {
+      const errors = error.details.map((detail) => detail.message);
+      return ResponseHandler.badRequest(res, "Erreur de validation", errors);
     }
 
-    
-    const existingCamion = await Camion.findOne({
-      matricule: matricule.toUpperCase(),
-    });
-    if (existingCamion) {
-      return ResponseHandler.badRequest(
-        res,
-        "Un camion avec cette matricule existe déjà"
-      );
-    }
+   
+    const camion = await createCamion(value);
 
-    
-    const camion = await Camion.create({
-      matricule,
-      marque,
-      modele,
-      annee,
-      kilometrage,
-      capaciteCharge,
-      statut: statut || VEHICULE_STATUS.DISPONIBLE,
-      pneus: pneus || [],
-      derniereMaintenance,
-      prochaineMaintenance,
-      remarques,
-    });
-
-    const populatedCamion = await Camion.findById(camion._id).populate(
-      "pneus",
-      "reference marque position usure"
-    );
-
-    return ResponseHandler.created(
-      res,
-      { camion: populatedCamion },
-      "Camion créé avec succès"
-    );
+    return ResponseHandler.created(res, { camion }, "Camion créé avec succès");
   } catch (error) {
     console.error("Create camion error:", error);
+
+    if (error.message === "Un camion avec cette matricule existe déjà") {
+      return ResponseHandler.badRequest(res, error.message);
+    }
 
     if (error.code === 11000) {
       return ResponseHandler.badRequest(
@@ -185,67 +136,36 @@ exports.createCamion = async (req, res) => {
 
 exports.updateCamion = async (req, res) => {
   try {
-    const {
-      matricule,
-      marque,
-      modele,
-      annee,
-      kilometrage,
-      capaciteCharge,
-      statut,
-      pneus,
-      derniereMaintenance,
-      prochaineMaintenance,
-      remarques,
-    } = req.body;
-
-    let camion = await Camion.findById(req.params.id);
-
-    if (!camion) {
-      return ResponseHandler.notFound(res, "Camion non trouvé");
+    if (!isValidObjectId(req.params.id)) {
+      return ResponseHandler.badRequest(res, "ID de camion invalide");
     }
 
     
-    if (matricule && matricule !== camion.matricule) {
-      const existingCamion = await Camion.findOne({
-        matricule: matricule.toUpperCase(),
-      });
-      if (existingCamion) {
-        return ResponseHandler.badRequest(
-          res,
-          "Un camion avec cette matricule existe déjà"
-        );
-      }
+    const { error, value } = validateUpdateCamion(req.body);
+
+    if (error) {
+      const errors = error.details.map((detail) => detail.message);
+      return ResponseHandler.badRequest(res, "Erreur de validation", errors);
     }
 
-   
-    if (matricule) camion.matricule = matricule;
-    if (marque) camion.marque = marque;
-    if (modele) camion.modele = modele;
-    if (annee) camion.annee = annee;
-    if (kilometrage !== undefined) camion.kilometrage = kilometrage;
-    if (capaciteCharge !== undefined) camion.capaciteCharge = capaciteCharge;
-    if (statut) camion.statut = statut;
-    if (pneus !== undefined) camion.pneus = pneus;
-    if (derniereMaintenance) camion.derniereMaintenance = derniereMaintenance;
-    if (prochaineMaintenance)
-      camion.prochaineMaintenance = prochaineMaintenance;
-    if (remarques !== undefined) camion.remarques = remarques;
-
-    await camion.save();
-
-    const updatedCamion = await Camion.findById(camion._id).populate(
-      "pneus",
-      "reference marque position usure"
-    );
+    
+    const camion = await updateCamion(req.params.id, value);
 
     return ResponseHandler.success(
       res,
-      { camion: updatedCamion },
+      { camion },
       "Camion mis à jour avec succès"
     );
   } catch (error) {
     console.error("Update camion error:", error);
+
+    if (error.message === "Camion non trouvé") {
+      return ResponseHandler.notFound(res, error.message);
+    }
+
+    if (error.message === "Un camion avec cette matricule existe déjà") {
+      return ResponseHandler.badRequest(res, error.message);
+    }
 
     if (error.kind === "ObjectId") {
       return ResponseHandler.badRequest(res, "ID de camion invalide");
@@ -273,21 +193,11 @@ exports.updateCamion = async (req, res) => {
 
 exports.deleteCamion = async (req, res) => {
   try {
-    const camion = await Camion.findById(req.params.id);
-
-    if (!camion) {
-      return ResponseHandler.notFound(res, "Camion non trouvé");
+    if (!isValidObjectId(req.params.id)) {
+      return ResponseHandler.badRequest(res, "ID de camion invalide");
     }
 
-   
-    if (camion.statut === VEHICULE_STATUS.EN_SERVICE) {
-      return ResponseHandler.badRequest(
-        res,
-        "Impossible de supprimer un camion en service. Veuillez changer son statut d'abord."
-      );
-    }
-
-    await Camion.findByIdAndDelete(req.params.id);
+    const camion = await deleteCamion(req.params.id);
 
     return ResponseHandler.success(
       res,
@@ -296,6 +206,14 @@ exports.deleteCamion = async (req, res) => {
     );
   } catch (error) {
     console.error("Delete camion error:", error);
+
+    if (error.message === "Camion non trouvé") {
+      return ResponseHandler.notFound(res, error.message);
+    }
+
+    if (error.message.includes("Impossible de supprimer")) {
+      return ResponseHandler.badRequest(res, error.message);
+    }
 
     if (error.kind === "ObjectId") {
       return ResponseHandler.badRequest(res, "ID de camion invalide");
