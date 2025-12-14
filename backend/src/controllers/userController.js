@@ -1,5 +1,9 @@
 const User = require("../models/User");
 const ResponseHandler = require("../utils/responseHandler");
+const {
+  validateCreateUser,
+  validateUpdateUser,
+} = require("../validators/userValidator");
 
 // Obtenir tous les utilisateurs (admin only)
 exports.getAllUsers = async (req, res, next) => {
@@ -46,6 +50,73 @@ exports.getChauffeurs = async (req, res, next) => {
   }
 };
 
+// Créer un nouvel utilisateur (admin seulement)
+exports.createUser = async (req, res, next) => {
+  try {
+    // Validation des données
+    const { error, value } = validateCreateUser(req.body);
+    if (error) {
+      return ResponseHandler.badRequest(
+        res,
+        "Erreur de validation",
+        error.details.map((d) => d.message)
+      );
+    }
+
+    const {
+      name,
+      email,
+      password,
+      role,
+      isActive,
+      telephone,
+      numeroPermis,
+      dateExpirationPermis,
+      adresse,
+    } = value;
+
+    // Vérifier si l'email existe déjà
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return ResponseHandler.badRequest(res, "Cet email est déjà utilisé");
+    }
+
+    // Créer l'utilisateur (le password sera hashé automatiquement par le pre-save hook)
+    const userData = {
+      name,
+      email,
+      password,
+      role: role || "chauffeur",
+      isActive: isActive !== undefined ? isActive : true,
+    };
+
+    // Ajouter les champs chauffeur s'ils sont fournis
+    if (telephone !== undefined) userData.telephone = telephone;
+    if (numeroPermis !== undefined) userData.numeroPermis = numeroPermis;
+    if (dateExpirationPermis !== undefined)
+      userData.dateExpirationPermis = dateExpirationPermis;
+    if (adresse !== undefined) userData.adresse = adresse;
+
+    const user = await User.create(userData);
+
+    // Récupérer l'utilisateur sans le password
+    const userResponse = await User.findById(user._id).select("-password");
+
+    ResponseHandler.success(
+      res,
+      { user: userResponse },
+      "Utilisateur créé avec succès",
+      201
+    );
+  } catch (error) {
+    // Gérer les erreurs de duplication MongoDB
+    if (error.code === 11000) {
+      return ResponseHandler.badRequest(res, "Cet email est déjà utilisé");
+    }
+    next(error);
+  }
+};
+
 // Obtenir un utilisateur par ID
 exports.getUserById = async (req, res, next) => {
   try {
@@ -64,12 +135,52 @@ exports.getUserById = async (req, res, next) => {
 // Mettre à jour un utilisateur
 exports.updateUser = async (req, res, next) => {
   try {
-    const { name, email, role, isActive } = req.body;
+    // Validation des données
+    const { error, value } = validateUpdateUser(req.body);
+    if (error) {
+      return ResponseHandler.badRequest(
+        res,
+        "Erreur de validation",
+        error.details.map((d) => d.message)
+      );
+    }
+
+    const {
+      name,
+      email,
+      role,
+      isActive,
+      telephone,
+      numeroPermis,
+      dateExpirationPermis,
+      adresse,
+    } = value;
 
     const user = await User.findById(req.params.id);
 
     if (!user) {
       return ResponseHandler.error(res, "Utilisateur non trouvé", 404);
+    }
+
+    // Protection anti-auto-destruction : empêcher un admin de modifier son propre rôle
+    if (
+      req.params.id === req.user.id &&
+      role &&
+      role !== req.user.role &&
+      req.user.role === "admin"
+    ) {
+      return ResponseHandler.forbidden(
+        res,
+        "Vous ne pouvez pas modifier votre propre rôle"
+      );
+    }
+
+    // Protection anti-auto-destruction : empêcher un admin de se désactiver lui-même
+    if (req.params.id === req.user.id && isActive === false) {
+      return ResponseHandler.forbidden(
+        res,
+        "Vous ne pouvez pas désactiver votre propre compte"
+      );
     }
 
     // Vérifier l'email dupliqué
@@ -84,6 +195,13 @@ exports.updateUser = async (req, res, next) => {
     if (email) user.email = email;
     if (role) user.role = role;
     if (typeof isActive !== "undefined") user.isActive = isActive;
+
+    // Mettre à jour les champs chauffeur (permettre les valeurs vides/null)
+    if (telephone !== undefined) user.telephone = telephone;
+    if (numeroPermis !== undefined) user.numeroPermis = numeroPermis;
+    if (dateExpirationPermis !== undefined)
+      user.dateExpirationPermis = dateExpirationPermis;
+    if (adresse !== undefined) user.adresse = adresse;
 
     await user.save();
 
@@ -101,6 +219,14 @@ exports.updateUser = async (req, res, next) => {
 // Supprimer un utilisateur
 exports.deleteUser = async (req, res, next) => {
   try {
+    // Protection anti-auto-destruction : empêcher un admin de se supprimer lui-même
+    if (req.params.id === req.user.id) {
+      return ResponseHandler.forbidden(
+        res,
+        "Vous ne pouvez pas supprimer votre propre compte"
+      );
+    }
+
     const user = await User.findById(req.params.id);
 
     if (!user) {

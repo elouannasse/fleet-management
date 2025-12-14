@@ -1,43 +1,54 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import api from '../api/axios';
+import { createContext, useContext, useState, useEffect } from "react";
+import api from "../config/api";
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
 
   // Vérifier si l'utilisateur est admin
-  const isAdmin = () => user?.role === 'admin';
-  
+  const isAdmin = () => user?.role === "admin";
+
   // Vérifier si l'utilisateur est chauffeur
-  const isChauffeur = () => user?.role === 'chauffeur';
+  const isChauffeur = () => user?.role === "chauffeur";
 
   // Connexion
   const login = async (email, password) => {
     try {
-      const response = await api.post('/auth/login', { email, password });
-      const { token: newToken, user: userData } = response.data;
-      
-      setToken(newToken);
-      setUser(userData);
-      localStorage.setItem('token', newToken);
-      localStorage.setItem('user', JSON.stringify(userData));
-      
-      return { success: true };
+      const response = await api.post("/auth/login", { email, password });
+
+      // Structure API: { success: true, data: { token: "...", user: {...} }, message: "..." }
+      if (response.data.success && response.data.data) {
+        const { token: newToken, user: userData } = response.data.data;
+
+        localStorage.setItem("token", newToken);
+        localStorage.setItem("user", JSON.stringify(userData));
+        setToken(newToken);
+        setUser(userData);
+        setLoading(false);
+
+        return { success: true, user: userData };
+      }
+
+      throw new Error(response.data.message || "Réponse API invalide");
     } catch (error) {
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Erreur de connexion' 
+      setLoading(false);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.message ||
+          "Erreur de connexion",
       };
     }
   };
@@ -45,12 +56,12 @@ export const AuthProvider = ({ children }) => {
   // Inscription
   const register = async (userData) => {
     try {
-      const response = await api.post('/auth/register', userData);
+      const response = await api.post("/auth/register", userData);
       return { success: true, data: response.data };
     } catch (error) {
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Erreur d\'inscription' 
+      return {
+        success: false,
+        message: error.response?.data?.message || "Erreur d'inscription",
       };
     }
   };
@@ -59,25 +70,25 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
   };
 
   // Vérifier le token au chargement
   useEffect(() => {
-    const checkAuth = async () => {
-      const storedToken = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
+    const checkAuth = () => {
+      const storedToken = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
 
       if (storedToken && storedUser) {
         try {
-          // Vérifier si le token est toujours valide
-          const response = await api.get('/auth/me');
-          setUser(response.data.user);
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
           setToken(storedToken);
         } catch (error) {
-          // Token invalide, nettoyer le localStorage
-          logout();
+          console.error("Erreur lors du chargement du user:", error);
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
         }
       }
       setLoading(false);
@@ -97,9 +108,5 @@ export const AuthProvider = ({ children }) => {
     logout,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

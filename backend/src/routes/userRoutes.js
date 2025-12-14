@@ -5,6 +5,7 @@ const { protect, adminOnly } = require("../middlewares/authMiddleware");
 
 // Routes pour les utilisateurs (toutes protégées, admin only sauf getChauffeurs)
 router.get("/", protect, adminOnly, userController.getAllUsers);
+router.post("/", protect, adminOnly, userController.createUser);
 router.get("/chauffeurs", protect, userController.getChauffeurs);
 router.get("/:id", protect, adminOnly, userController.getUserById);
 router.put("/:id", protect, adminOnly, userController.updateUser);

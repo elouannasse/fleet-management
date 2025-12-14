@@ -37,15 +37,17 @@ const calculateStats = async (baseFilter) => {
 
 const populateTrajet = (query, includeDetails = false) => {
   let populated = query
-    .populate(
-      "chauffeur",
-      "nom prenom email" + (includeDetails ? " telephone" : "")
-    )
+    .populate("chauffeur", "name email" + (includeDetails ? " telephone" : ""))
     .populate(
       "camion",
-      "matricule marque modele" + (includeDetails ? " kilometrage statut" : "")
+      "matricule marque modele annee" +
+        (includeDetails ? " kilometrage statut capaciteCharge" : "")
     )
-    .populate("remorque", "matricule type" + (includeDetails ? " statut" : ""));
+    .populate(
+      "remorque",
+      "matricule type capaciteCharge" +
+        (includeDetails ? " statut capacite" : "")
+    );
 
   return populated;
 };
@@ -196,7 +198,14 @@ const updateTrajet = async (trajetId, data, newChauffeur = null) => {
     throw new Error("Impossible de modifier un trajet terminé");
   }
 
-  Object.assign(trajet, data);
+  // Map 'poids' to 'poidsMarchandise' if provided (same as createTrajet)
+  const updateData = { ...data };
+  if (updateData.poids !== undefined) {
+    updateData.poidsMarchandise = updateData.poids;
+    delete updateData.poids;
+  }
+
+  Object.assign(trajet, updateData);
 
   if (newChauffeur) {
     trajet.chauffeur = newChauffeur._id;

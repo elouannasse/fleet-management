@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { jwtSecret, jwtExpire } = require("../config/env");
+const { validateUpdatePassword } = require("../validators/userValidator");
 
 const generateToken = (id) => {
   return jwt.sign({ id }, jwtSecret, { expiresIn: jwtExpire });
@@ -154,6 +155,57 @@ exports.getMe = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Erreur lors de la récupération de l'utilisateur",
+    });
+  }
+};
+
+// Changer le mot de passe (utilisateur connecté)
+exports.updatePassword = async (req, res) => {
+  try {
+    // Validation des données
+    const { error, value } = validateUpdatePassword(req.body);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: "Erreur de validation",
+        errors: error.details.map((d) => d.message),
+      });
+    }
+
+    const { currentPassword, newPassword } = value;
+
+    // Récupérer l'utilisateur avec le mot de passe
+    const user = await User.findById(req.user.id).select("+password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Utilisateur non trouvé",
+      });
+    }
+
+    // Vérifier l'ancien mot de passe
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Mot de passe actuel incorrect",
+      });
+    }
+
+    // Mettre à jour le mot de passe (sera hashé automatiquement par le pre-save hook)
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Mot de passe modifié avec succès",
+    });
+  } catch (error) {
+    console.error("Update password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur lors de la modification du mot de passe",
     });
   }
 };

@@ -6,20 +6,20 @@ const Sidebar = () => {
   const location = useLocation();
 
   const adminMenuItems = [
-    { path: '/dashboard', label: 'Dashboard Admin', icon: '' },
-    { path: '/users', label: 'Utilisateurs', icon: '' },
-    { path: '/camions', label: 'Camions', icon: '' },
-    { path: '/remorques', label: 'Remorques', icon: '' },
-    { path: '/pneus', label: 'Pneus', icon: '' },
-    { path: '/trajets', label: 'Trajets', icon: '' },
-    { path: '/maintenances', label: 'Maintenances', icon: '' },
-    { path: '/reports', label: 'Rapports', icon: '' },
+    { path: '/admin/dashboard', label: 'Dashboard Admin', icon: '📊' },
+    { path: '/admin/users', label: 'Utilisateurs', icon: '👥' },
+    { path: '/admin/camions', label: 'Camions', icon: '🚛' },
+    { path: '/admin/remorques', label: 'Remorques', icon: '🚚' },
+    { path: '/admin/pneus', label: 'Pneus', icon: '🛞' },
+    { path: '/admin/trajets', label: 'Trajets', icon: '🛣️' },
+    { path: '/admin/maintenances', label: 'Maintenances', icon: '🔧' },
+    { path: '/admin/reports', label: 'Rapports', icon: '📈' },
   ];
 
   const chauffeurMenuItems = [
-    { path: '/dashboard', label: 'Dashboard Chauffeur', icon: '' },
-    { path: '/mes-trajets', label: 'Mes Trajets', icon: '' },
-    { path: '/vehicules-disponibles', label: 'Véhicules disponibles', icon: '' },
+    { path: '/chauffeur/dashboard', label: 'Dashboard Chauffeur', icon: '📋' },
+    { path: '/chauffeur/mes-trajets', label: 'Mes Trajets', icon: '🛣️' },
+    { path: '/chauffeur/vehicules-disponibles', label: 'Véhicules disponibles', icon: '🚛' },
   ];
 
   const menuItems = isAdmin() ? adminMenuItems : chauffeurMenuItems;

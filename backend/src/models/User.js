@@ -32,6 +32,22 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Champs spécifiques aux chauffeurs
+    telephone: {
+      type: String,
+      trim: true,
+    },
+    numeroPermis: {
+      type: String,
+      trim: true,
+    },
+    dateExpirationPermis: {
+      type: Date,
+    },
+    adresse: {
+      type: String,
+      trim: true,
+    },
   },
   {
     timestamps: true,

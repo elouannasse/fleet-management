@@ -7,7 +7,20 @@ require("./models");
 
 const app = express();
 
-app.use(cors({ origin: frontendUrl, credentials: true }));
+// CORS Configuration
+const corsOptions = {
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:5173", // Vite port
+    "http://localhost:5174",
+    frontendUrl,
+  ].filter(Boolean),
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

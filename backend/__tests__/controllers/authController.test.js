@@ -81,4 +81,97 @@ describe("AuthController", () => {
       expect(res.status).toBe(401);
     });
   });
+
+  // 🆕 Tests pour PUT /api/auth/update-password
+  describe("PUT /api/auth/update-password", () => {
+    it("devrait changer le mot de passe avec succès", async () => {
+      const res = await request(app)
+        .put("/api/auth/update-password")
+        .set("Authorization", `Bearer ${chauffeurToken}`)
+        .send({
+          currentPassword: "password123",
+          newPassword: "newpassword123",
+          confirmPassword: "newpassword123",
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.message).toContain("modifié");
+
+      // Vérifier qu'on peut se connecter avec le nouveau mot de passe
+      const loginRes = await request(app).post("/api/auth/login").send({
+        email: chauffeur.email,
+        password: "newpassword123",
+      });
+
+      expect(loginRes.status).toBe(200);
+      expect(loginRes.body.success).toBe(true);
+    });
+
+    it("devrait échouer avec un mauvais mot de passe actuel", async () => {
+      const res = await request(app)
+        .put("/api/auth/update-password")
+        .set("Authorization", `Bearer ${chauffeurToken}`)
+        .send({
+          currentPassword: "wrongpassword",
+          newPassword: "newpassword123",
+          confirmPassword: "newpassword123",
+        });
+
+      expect(res.status).toBe(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain("actuel incorrect");
+    });
+
+    it("devrait échouer si les mots de passe ne correspondent pas", async () => {
+      const res = await request(app)
+        .put("/api/auth/update-password")
+        .set("Authorization", `Bearer ${chauffeurToken}`)
+        .send({
+          currentPassword: "password123",
+          newPassword: "newpassword123",
+          confirmPassword: "differentpassword",
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it("devrait échouer avec un nouveau mot de passe trop court", async () => {
+      const res = await request(app)
+        .put("/api/auth/update-password")
+        .set("Authorization", `Bearer ${chauffeurToken}`)
+        .send({
+          currentPassword: "password123",
+          newPassword: "123",
+          confirmPassword: "123",
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it("devrait échouer sans token JWT", async () => {
+      const res = await request(app).put("/api/auth/update-password").send({
+        currentPassword: "password123",
+        newPassword: "newpassword123",
+        confirmPassword: "newpassword123",
+      });
+
+      expect(res.status).toBe(401);
+    });
+
+    it("devrait échouer avec des champs manquants", async () => {
+      const res = await request(app)
+        .put("/api/auth/update-password")
+        .set("Authorization", `Bearer ${chauffeurToken}`)
+        .send({
+          currentPassword: "password123",
+          // Manque newPassword et confirmPassword
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+  });
 });
